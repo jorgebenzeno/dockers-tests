@@ -1,0 +1,10 @@
+{
+  "advertise_addr" : "{{ GetInterfaceIP \"eth0\" }}",
+  "bind_addr": "{{ GetInterfaceIP \"eth0\" }}",
+  "client_addr": "0.0.0.0",
+  "data_dir": "/consul/data",
+  "datacenter": "us-west-2",
+  "retry_join" : [
+    "server"
+  ]
+}

@@ -1,0 +1,41 @@
+version: '3'
+
+services:
+    consul-agent-1:
+        image: consul:latest
+        networks:
+            - consul-demo
+        command: agent -data-dir=/consul/data -retry-join consul-server-bootstrap -grpc-port 8502
+        environment:
+            - CONSUL_BIND_INTERFACE=eth0 # Cluster addr
+            - CONSUL_CLIENT_INTERFACE=eth0 # Client addr
+
+    consul-server-bootstrap:
+        image: consul:latest
+        networks:
+            - consul-demo
+        ports:
+            - "8300:8302/tcp"
+            - "8400:8400"
+            - "8500:8500"
+            - "8600:8600"
+            - "8600:8600/udp"
+        # -client: This is the address used for client interfaces to the agent. This includes
+        # the ports for the HTTP and DNS interfaces. By default, this binds only to localhost.
+        command: agent -server -data-dir=/consul/data -bootstrap-expect=1 -grpc-port 8502
+        environment:
+            # This is the address and set of ports used for communication between Consul agents in a cluster.
+            # Not all Consul agents in a cluster have to use the same port, but this address MUST be reachable by all other nodes.
+            - CONSUL_BIND_INTERFACE=eth0 # Cluster addr
+            - CONSUL_CLIENT_INTERFACE=eth0
+    visualizer:
+        image: dockersamples/visualizer:stable
+        ports:
+            - "4001:8080"
+        volumes:
+            - "/var/run/docker.sock:/var/run/docker.sock"
+#        deploy:
+#            placement:
+#                constraints: [node.role == manager]
+networks:
+    consul-demo:

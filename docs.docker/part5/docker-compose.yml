@@ -1,0 +1,69 @@
+version: '3.4'
+
+services:
+    web:
+        # replace username/repo:tag with your name and image details
+        image: benzeno/get-started:part2
+        # Instruct web’s containers to share port 80 via a load-balanced network called webnet.
+        # (Internally, the containers themselves publish to web’s port 80 at an ephemeral port.)
+        deploy:
+            replicas: 5
+            resources:
+                limits:
+                    cpus: "0.1"
+                    memory: 50M
+            restart_policy:
+                condition: on-failure # Immediately restart containers if one fails.
+        ports:
+            - "4000:80" # Map port 4000 on the host to web’s port 80.
+        networks:
+            - webnet
+#    registrator:
+#        image: gliderlabs/registrator:latest
+#        command: "-ip 192.168.99.102 consul://192.168.99.102:8500"
+#        hostname: 192.168.99.102
+#        depends_on:
+#            - consul
+#        volumes:
+#            - /var/run/docker.sock:/tmp/docker.sock
+#        networks:
+#          - webnet
+    visualizer:
+        image: dockersamples/visualizer:stable
+        ports:
+            - "4001:8080"
+        volumes:
+            - "/var/run/docker.sock:/var/run/docker.sock"
+        deploy:
+            placement:
+                constraints: [node.role == manager]
+        networks:
+            - webnet
+    redis_server:
+        image: redis
+        ports:
+            - "6379:6379"
+        volumes:
+            - "/home/docker/data:/data"
+        deploy:
+            placement:
+                constraints: [node.role == manager]
+        command: redis-server --appendonly yes
+        environment:
+            - SERVICE_NAME=redis
+        networks:
+            - webnet
+    consul:
+        image:  consul
+        command: "-advertise=192.168.1.83 -server -bootstrap"
+        hostname: consul_node
+        ports:
+            - 8500:8500
+            - 8600:8600/udp
+        networks:
+          - webnet
+        deploy:
+            placement:
+                constraints: [node.role == manager]
+networks:
+    webnet: # Define the webnet network with the default settings (which is a load-balanced overlay network).
